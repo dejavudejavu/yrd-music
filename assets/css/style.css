@@ -1569,12 +1569,12 @@ footer {
     overflow: visible;
     /* 页面顶部 / 底部留白，避开 iOS 刘海与浏览器底栏 */
     padding-top: calc(16px + env(safe-area-inset-top, 0px));
-    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
   }
 
   .app {
     height: auto;
-    min-height: calc(100dvh - 60px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    min-height: calc(100dvh - 68px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
     margin: 10px;
     padding: 8px;
     gap: 8px;
@@ -1794,11 +1794,14 @@ footer {
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
+    /* 最后一条与滚动区底边留出空白 */
+    padding-bottom: 10px;
   }
 
   .search-results-mini:empty {
     min-height: 0;
     margin-top: 0;
+    padding-bottom: 0;
   }
 
   .search-mini-item {
@@ -1850,6 +1853,12 @@ footer {
     max-height: none;
     min-height: 0;
     overflow: visible;
+    /* 有歌曲时，列表与面板底边之间保留留白 */
+    padding-bottom: 0;
+  }
+
+  .playlist-main.has-tracks {
+    padding-bottom: 14px;
   }
 
   .playlist-list {
@@ -1858,6 +1867,12 @@ footer {
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     padding-right: 2px;
+    /* 最后一条与滚动区底边留出空白 */
+    padding-bottom: 10px;
+  }
+
+  .playlist-list:empty {
+    padding-bottom: 0;
   }
 
   .playlist-tab {
@@ -1908,7 +1923,7 @@ footer {
 @media (max-width: 560px) {
   .app {
     margin: 0;
-    min-height: calc(100dvh - 40px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    min-height: calc(100dvh - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
     padding: 6px 8px 10px;
     border-radius: 0;
     border-left: none;

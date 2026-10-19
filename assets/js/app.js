@@ -974,6 +974,7 @@
       renderPlaylistOptions();
       if (!state.playlists.length) {
         updatePlaylistInfoLabel();
+        dom.playlistMain.classList.remove('has-tracks');
         return;
       }
       const pl = state.playlists.find(p => p.id === dom.playlistSelect.value) || state.playlists[0];
@@ -982,6 +983,7 @@
       list = pl.tracks;
     }
     updatePlaylistInfoLabel();
+    dom.playlistMain.classList.toggle('has-tracks', list.length > 0);
 
     list.forEach((track, idx) => {
       const item = document.createElement('div');
