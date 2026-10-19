@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "description": "皮卡丘的音乐站：网易云 / QQ / 酷我 / JOOX 四源音乐搜索、播放与歌词高亮（本地可运行版）",
+  "homepage": "https://dejavudejavu.github.io/yrd-music/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dejavudejavu/yrd-music.git"
+  },
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

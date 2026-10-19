@@ -1,7 +1,9 @@
-# 皮卡丘的音乐站 · Pikachu Music（本地版）
+# 皮卡丘的音乐站 · Pikachu Music
 
-基于 [CharlesPikachu/musicsquare](https://github.com/CharlesPikachu/musicsquare) 重构的可本地运行版本：保留原站的全部功能与第三方音频接口，重新组织为 `HTML + CSS + 原生 JS` 的静态站点，并针对手机、平板和横屏做了完整的响应式适配。
+基于 [CharlesPikachu/musicsquare](https://github.com/CharlesPikachu/musicsquare) 重构的版本：保留原站的全部功能与第三方音频接口，重新组织为 `HTML + CSS + 原生 JS` 的静态站点，并针对手机、平板和横屏做了完整的响应式适配。既可本地运行，也已部署到 GitHub Pages。
 
+- **在线访问：<https://dejavudejavu.github.io/yrd-music/>**
+- **仓库地址：<https://github.com/dejavudejavu/yrd-music>**
 - 零构建、零依赖：克隆后直接启动即可
 - 桌面 / 平板 / 手机自适应，触屏操作可用
 - 四个音乐源：网易云、QQ 音乐、酷我、JOOX
@@ -156,7 +158,7 @@ musicweb/
 
 **手机端可以正常保存**，机制与桌面完全相同；数据属于手机浏览器，不会回传电脑，也不会在手机与电脑之间自动同步。需要注意：
 
-- 手机访问的地址就是数据所属的 origin。用 `http://192.168.1.23:5173` 保存的数据，在 `http://127.0.0.1:5173` 或路由器重新分配 IP 后都看不到；建议给电脑设置固定局域网 IP。
+- 手机访问的地址就是数据所属的 origin。用 `http://192.168.1.23:5173` 保存的数据，在 `http://127.0.0.1:5173` 或路由器重新分配 IP 后都看不到；建议给电脑设置固定局域网 IP，或直接使用固定的 Pages 地址 `https://dejavudejavu.github.io/yrd-music/`。
 - 无痕/隐私模式关闭窗口后清空；手动清除网站数据、系统清理存储也会丢失。
 - iOS Safari 对长期未访问站点的脚本存储可能执行回收（版本策略不同），重要歌单建议定期「导出歌单」备份到「文件」或网盘。
 - 换手机、换浏览器或换端口后，用「导出 / 导入」迁移；同时开多个标签页修改时以最后一次写入为准。
@@ -172,9 +174,32 @@ musicweb/
 
 ---
 
+## 部署到 GitHub Pages
+
+当前仓库已经按以下方式部署：
+
+- 仓库：`dejavudejavu/yrd-music`，分支 `main`
+- Pages 来源：`main` 分支根目录（`/`）
+- 根目录的 `.nojekyll` 让 GitHub Pages 直接按静态文件发布，不经过 Jekyll
+- 站点为纯静态资源，所有路径均为相对路径，因此可以运行在 `/yrd-music/` 子路径下
+- 页面通过 HTTPS 访问，`assets/js/api.js` 中的 `toHttps()` 会把平台返回的音频/封面地址升级为 HTTPS，避免混合内容被浏览器拦截
+
+如果要部署到你自己的仓库：
+
+1. 新建一个公开仓库，把本项目推送到 `main`
+2. 仓库 **Settings → Pages → Build and deployment**
+3. Source 选择 **Deploy from a branch**，Branch 选择 `main`，目录选择 `/ (root)`
+4. 等待 1–2 分钟，访问 `https://<用户名>.github.io/<仓库名>/`
+
+不需要 GitHub Actions，也不需要执行构建命令。
+
+---
+
 ## 已知限制
 
 - 第三方接口依赖公网，网络受限、接口限流或平台策略变化时可能出现搜索为空、音源 410/403 等情况。
+- 酷我接口返回的直链目前可能失效（HTTP/HTTPS 均为 410），搜索仍可用，但播放可能失败；可切换网易云 / QQ / JOOX。
+- QQ 音乐中标记为“付费”的歌曲通常不会返回播放地址；免费歌曲可以正常播放。
 - 浏览器自动播放策略可能阻止切歌后的自动播放：此时播放器会停在“已暂停”，点一下播放即可（移动端常见）。
 - 音频版权归各平台与原作者所有，本项目仅用于学习与前端演示。
 
