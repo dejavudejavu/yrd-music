@@ -1569,12 +1569,26 @@ footer {
     overflow: visible;
     /* 页面顶部 / 底部留白，避开 iOS 刘海与浏览器底栏 */
     padding-top: calc(16px + env(safe-area-inset-top, 0px));
-    padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* 固定在视口底部的留白条：无论滚动到什么位置，底部始终有空白 */
+  body::after {
+    content: "";
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: calc(20px + env(safe-area-inset-bottom, 0px));
+    background: var(--bg-dark);
+    box-shadow: 0 -10px 18px rgba(2, 3, 10, 0.85);
+    pointer-events: none;
+    z-index: 1400;
   }
 
   .app {
     height: auto;
-    min-height: calc(100dvh - 68px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    min-height: calc(100dvh - 76px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
     margin: 10px;
     padding: 8px;
     gap: 8px;
@@ -1923,7 +1937,7 @@ footer {
 @media (max-width: 560px) {
   .app {
     margin: 0;
-    min-height: calc(100dvh - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    min-height: calc(100dvh - 56px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
     padding: 6px 8px 10px;
     border-radius: 0;
     border-left: none;
