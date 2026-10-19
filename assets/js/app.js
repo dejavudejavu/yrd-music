@@ -1,5 +1,5 @@
 /*
- * 皮卡丘的音乐站 · 主逻辑
+ * yrd音乐站 · 主逻辑
  * ---------------------------------------------------------------------------
  * 功能：四源聚合搜索、播放/暂停/切歌、进度与音量、LRC 歌词高亮、
  *       收藏、自建歌单、导入/导出、中英切换、快捷键、粒子背景、水波纹。
@@ -137,7 +137,7 @@
     try { localStorage.setItem(LANG_STORAGE_KEY, lang); } catch (e) {}
 
     document.documentElement.lang = lang === 'zh' ? 'zh' : 'en';
-    document.title = t('appTitle') + ' - Pikachu Music';
+    document.title = t('appTitle') + ' - yrd Music';
 
     document.querySelectorAll('.lang-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.lang === lang);
@@ -1275,6 +1275,10 @@
     dom.searchStatus = $('search-status');
     dom.searchCount = $('search-count');
     dom.searchMiniList = $('search-mini-list');
+    dom.mobileLoadSentinel = document.createElement('div');
+    dom.mobileLoadSentinel.className = 'mobile-load-sentinel';
+    dom.mobileLoadSentinel.setAttribute('aria-hidden', 'true');
+    dom.searchMiniList.insertAdjacentElement('afterend', dom.mobileLoadSentinel);
 
     dom.coverImg = $('cover-img');
     dom.coverPlaceholder = document.querySelector('.cover-placeholder');
@@ -1638,6 +1642,20 @@
     });
   }
 
+  function setupMobileInfiniteScroll() {
+    if (!('IntersectionObserver' in window) || !dom.mobileLoadSentinel) return;
+    const io = new IntersectionObserver(entries => {
+      if (!entries.some(e => e.isIntersecting)) return;
+      if (!window.matchMedia('(max-width: 860px)').matches) return;
+      if (!state.searchResults.length) return;
+      const activeTab = document.querySelector('.playlist-tab.active')?.dataset.tab || 'results';
+      if (activeTab !== 'results') return;
+      if (!canAutoLoadMore()) return;
+      requestMoreResults();
+    }, { rootMargin: '300px 0px' });
+    io.observe(dom.mobileLoadSentinel);
+  }
+
   /* ============================ 初始化 ============================ */
 
   function init() {
@@ -1650,6 +1668,7 @@
     setupParticles();
     setupRipple();
     setupEvents();
+    setupMobileInfiniteScroll();
     setLanguage(state.language);
     renderPlaylistOptions();
     renderPlaylistList();

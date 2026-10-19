@@ -1,5 +1,5 @@
 #!/bin/sh
-# 皮卡丘的音乐站 · macOS / Linux 启动脚本
+# yrd音乐站 · macOS / Linux 启动脚本
 set -e
 cd "$(dirname "$0")"
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * 皮卡丘的音乐站 · 本地静态服务器
+ * yrd音乐站 · 本地静态服务器
  * ---------------------------------------------------------------------------
  * 零依赖，仅使用 Node.js 内置模块。
  *   node server.js                  # http://127.0.0.1:5173
@@ -43,7 +43,7 @@ function parseArgs(argv) {
 
 function printHelp() {
   console.log(`
-皮卡丘的音乐站 · 本地服务器
+yrd音乐站 · 本地服务器
 
 用法:
   node server.js [选项]
@@ -218,7 +218,7 @@ function start(port, host, attemptsLeft) {
 
   server.listen(port, host, () => {
     const shownHost = host === '0.0.0.0' || host === '::' ? '127.0.0.1' : host;
-    console.log('\n  ⚡  皮卡丘的音乐站 · Pikachu Music\n');
+    console.log('\n  ⚡  yrd音乐站 · yrd Music\n');
     console.log(`  本机访问:   http://${shownHost}:${port}/`);
     if (host === '0.0.0.0' || host === '::') {
       const ips = getLanIPs();

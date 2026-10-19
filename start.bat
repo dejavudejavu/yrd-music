@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 cd /d "%~dp0"
-title 皮卡丘的音乐站 - Pikachu Music
+title yrd音乐站 - yrd Music
 
 where node >nul 2>nul
 if errorlevel 1 (
@@ -14,7 +14,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo 正在启动皮卡丘的音乐站...
+echo 正在启动 yrd音乐站...
 echo.
 node server.js %*
 echo.

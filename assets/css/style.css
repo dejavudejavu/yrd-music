@@ -538,6 +538,19 @@ select:focus-visible,
   margin-top: 4px;
 }
 
+/* 手机端搜索结果末尾的自动加载触发器（1px，不占视觉空间） */
+.mobile-load-sentinel {
+  width: 100%;
+  height: 1px;
+  pointer-events: none;
+}
+
+@media (min-width: 861px) {
+  .mobile-load-sentinel {
+    display: none;
+  }
+}
+
 .search-mini-item {
   display: flex;
   justify-content: space-between;
@@ -1556,15 +1569,17 @@ footer {
 /* ============================== 响应式：手机 ============================== */
 
 @media (max-width: 860px) {
-  html, body {
+  html {
     height: auto;
     overflow-x: hidden;
     overflow-y: auto;
-    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   body {
+    height: auto;
     min-height: 100dvh;
+    overflow: visible;
   }
 
   .app {
@@ -1773,18 +1788,20 @@ footer {
     min-height: 0;
     margin-top: 8px;
     padding: 10px 14px 8px;
+    /* 手机端由整页负责上下滚动：歌词区只保留自动滚动，手指滑动可穿透到页面 */
+    overflow: hidden;
   }
 
   .lyrics-line {
     font-size: 16px;
   }
 
-  /* 搜索面板：结果列表独立滚动，高度自适应 */
+  /* 搜索面板：结果随页面展开，避免列表内滚动“吃掉”手指滑动 */
   .search-results-mini {
     flex: none;
-    min-height: 132px;
-    max-height: 42vh;
-    -webkit-overflow-scrolling: touch;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
   }
 
   .search-results-mini:empty {
@@ -1835,11 +1852,12 @@ footer {
     font-size: 10px;
   }
 
-  /* 播放列表：头部吸顶，列表独立滚动 */
+  /* 播放列表：随页面展开，头部在整页滚动时吸顶 */
   .playlist-main {
     flex: none;
-    max-height: 58vh;
-    -webkit-overflow-scrolling: touch;
+    max-height: none;
+    min-height: 0;
+    overflow: visible;
   }
 
   .playlist-tab {
@@ -1981,10 +1999,6 @@ footer {
     transform: scale(1.08);
   }
 
-  .playlist-main {
-    max-height: 62vh;
-  }
-
   .playlist-tabs {
     font-size: 10px;
   }
@@ -2081,14 +2095,6 @@ footer {
 
   .lyrics-container {
     height: 150px;
-  }
-
-  .search-results-mini {
-    max-height: 48vh;
-  }
-
-  .playlist-main {
-    max-height: 60vh;
   }
 }
 

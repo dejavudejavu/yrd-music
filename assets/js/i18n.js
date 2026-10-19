@@ -7,11 +7,11 @@
 
   const translations = {
     zh: {
-      appTitle: '皮卡丘的音乐站',
+      appTitle: 'yrd音乐站',
       authorLabel: '作者：Zhenchao Jin + GPT 5.1',
       shortcutHint: '快捷键：Space 播放/暂停 · ←/→ 跳转 · ↑/↓ 音量 · N/P 切歌 · F 收藏 · L 切换歌词效果',
       shortcutPanelTitle: '快捷键说明',
-      shortcutPanelDesc: '使用键盘可以更加方便地控制皮卡丘的音乐站：',
+      shortcutPanelDesc: '使用键盘可以更加方便地控制 yrd音乐站：',
       shortcutPlayPause: '播放 / 暂停',
       shortcutSeek: '快退 / 快进 5 秒',
       shortcutVolume: '音量加 / 减',
@@ -103,11 +103,11 @@
       ariaClose: '关闭'
     },
     en: {
-      appTitle: 'Pikachu Music Station',
+      appTitle: 'yrd Music Station',
       authorLabel: 'Author: Zhenchao Jin + GPT 5.1',
       shortcutHint: 'Shortcuts: Space Play/Pause · ←/→ Seek · ↑/↓ Volume · N/P Track · F Fav · L Lyrics FX',
       shortcutPanelTitle: 'Keyboard Shortcuts',
-      shortcutPanelDesc: 'Control Pikachu Music Station more easily with your keyboard:',
+      shortcutPanelDesc: 'Control yrd Music Station more easily with your keyboard:',
       shortcutPlayPause: 'Play / Pause',
       shortcutSeek: 'Seek backward / forward 5s',
       shortcutVolume: 'Volume up / down',
