@@ -47,8 +47,12 @@
   let playToken = 0;
   let searchToken = 0;
   let toastTimer = null;
-  let lastPlayErrorAt = 0;
   let progressDragging = false;
+  // 播放失败自动切歌：记录本次失败、连续失败次数与加载超时
+  let failedPlayToken = -1;
+  let failureSkipCount = 0;
+  let loadWatchdogTimer = null;
+  let suppressPauseStatus = false;
 
   /* ============================ 基础工具 ============================ */
 
@@ -619,9 +623,98 @@
     }
   }
 
+  function clearLoadWatchdog() {
+    if (loadWatchdogTimer) {
+      clearTimeout(loadWatchdogTimer);
+      loadWatchdogTimer = null;
+    }
+  }
+
+  function startLoadWatchdog(token, track) {
+    clearLoadWatchdog();
+    loadWatchdogTimer = setTimeout(() => {
+      if (token !== playToken) return;
+      if (dom.audio.readyState >= 2) return;
+      console.warn('playback watchdog timeout:', track && track.title);
+      handlePlaybackFailure(track, token);
+    }, 15000);
+  }
+
+  function resetFailureGuard() {
+    failedPlayToken = -1;
+    failureSkipCount = 0;
+    clearLoadWatchdog();
+  }
+
+  function withTimeout(promise, ms, message) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error(message)), ms);
+      promise.then(
+        value => { clearTimeout(timer); resolve(value); },
+        err => { clearTimeout(timer); reject(err); }
+      );
+    });
+  }
+
+  // 当前歌曲确认无法播放：自动切到下一首；连续失败达到上限后停止，避免死循环
+  function handlePlaybackFailure(track, token) {
+    if (!track || token !== playToken) return;
+    if (failedPlayToken === token) return;
+    failedPlayToken = token;
+    clearLoadWatchdog();
+
+    // 先暂停，再设置“空闲”，避免 pause 事件把状态改回“已暂停”
+    suppressPauseStatus = true;
+    try { dom.audio.pause(); } catch (e) {}
+    state.isPlaying = false;
+    updatePlayButtonUI();
+    setPlayerStatus('playerStatusIdle');
+    setTimeout(() => { suppressPauseStatus = false; }, 250);
+
+    const list = getActiveList();
+    failureSkipCount += 1;
+    const maxFailures = Math.min(Math.max(list.length, 1), 6);
+
+    if (list.length <= 1 || failureSkipCount >= maxFailures) {
+      failureSkipCount = 0;
+      showToast(t('toastAllTracksFailed'));
+      return;
+    }
+
+    showToast(t('toastPlayFailedSkipping'));
+    setTimeout(() => {
+      if (token !== playToken) return;
+      playNextAfterFailure(track);
+    }, 400);
+  }
+
+  function playNextAfterFailure(failedTrack) {
+    const list = getActiveList();
+    if (list.length <= 1) {
+      showToast(t('toastAllTracksFailed'));
+      return;
+    }
+
+    let idx = list.findIndex(x => x.uid === failedTrack.uid);
+    if (idx < 0) idx = state.playContext.index ?? -1;
+
+    if (state.playMode === 'shuffle') {
+      let nextIdx;
+      do { nextIdx = Math.floor(Math.random() * list.length); } while (nextIdx === idx);
+      idx = nextIdx;
+    } else {
+      // 单曲循环也不重播失败歌曲，改为顺延到下一首
+      idx = (idx + 1 + list.length) % list.length;
+    }
+
+    playFromList(state.playContext.type, idx, state.playContext.playlistId, { autoSkip: true });
+  }
+
   async function playTrack(track, context) {
     if (!track) return;
     const token = ++playToken;
+    clearLoadWatchdog();
+    failedPlayToken = -1;
     state.currentTrack = track;
     state.playContext = context || state.playContext;
 
@@ -668,7 +761,7 @@
     updateMainFavButton();
 
     try {
-      await ensureTrackDetails(track);
+      await withTimeout(ensureTrackDetails(track), 15000, 'track detail timeout');
       if (token !== playToken) return; // 用户已切到别的歌
 
       applyUI();
@@ -676,33 +769,40 @@
       renderLyrics();
 
       if (!track.audioUrl) {
-        showToast(t('toastPlayError'));
-        setPlayerStatus('playerStatusIdle');
+        handlePlaybackFailure(track, token);
         return;
       }
 
       dom.audio.src = track.audioUrl;
       dom.audio.currentTime = 0;
+      startLoadWatchdog(token, track);
       try {
         await dom.audio.play();
         state.isPlaying = true;
         updatePlayButtonUI();
         setPlayerStatus('playerStatusPlaying');
       } catch (playErr) {
+        if (token !== playToken) return;
         if (playErr && playErr.name === 'NotAllowedError') {
-          // 移动端浏览器可能拦截自动播放：保持已加载状态，等待用户点播放
+          // 移动端浏览器可能拦截自动播放：保持已加载状态，等待用户点播放，不能误判为歌曲失败
+          clearLoadWatchdog();
           state.isPlaying = false;
           updatePlayButtonUI();
           setPlayerStatus('playerStatusPaused');
+        } else if (playErr && playErr.name === 'AbortError') {
+          // 切歌/重新加载导致的主动中断，不触发自动切歌
+          return;
         } else {
-          throw playErr;
+          console.error('play failed', playErr);
+          handlePlaybackFailure(track, token);
+          return;
         }
       }
     } catch (e) {
       console.error(e);
       if (token === playToken) {
-        showToast(t('toastPlayError'));
-        setPlayerStatus('playerStatusIdle');
+        handlePlaybackFailure(track, token);
+        return;
       }
     }
 
@@ -727,7 +827,9 @@
     return getInterleavedSearchList();
   }
 
-  function playFromList(type, index, plId) {
+  function playFromList(type, index, plId, options) {
+    // 用户主动点歌/切歌时重置失败计数；自动跳过时保留计数，避免死循环
+    if (!options || !options.autoSkip) resetFailureGuard();
     let list;
     if (type === 'results') list = getInterleavedSearchList();
     else if (type === 'favorites') list = state.favorites;
@@ -775,8 +877,23 @@
       if (state.currentTrack) showToast(t('toastDownloadNotReady'));
       return;
     }
-    if (state.isPlaying) dom.audio.pause();
-    else dom.audio.play().catch(e => console.error(e));
+    if (state.isPlaying) {
+      dom.audio.pause();
+    } else {
+      resetFailureGuard();
+      if (state.currentTrack) startLoadWatchdog(playToken, state.currentTrack);
+      dom.audio.play().catch(e => {
+        if (e && e.name === 'NotAllowedError') {
+          clearLoadWatchdog();
+          state.isPlaying = false;
+          updatePlayButtonUI();
+          setPlayerStatus('playerStatusPaused');
+        } else if (!e || e.name !== 'AbortError') {
+          console.error(e);
+          handlePlaybackFailure(state.currentTrack, playToken);
+        }
+      });
+    }
   }
 
   function toggleFavoriteCurrent() {
@@ -1490,7 +1607,12 @@
     });
 
     dom.audio.addEventListener('loadedmetadata', () => {
+      clearLoadWatchdog();
       updateProgressUI(dom.audio.currentTime || 0, dom.audio.duration || 0);
+    });
+
+    dom.audio.addEventListener('canplay', () => {
+      clearLoadWatchdog();
     });
 
     dom.audio.addEventListener('play', () => {
@@ -1500,28 +1622,36 @@
       if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
     });
 
+    dom.audio.addEventListener('playing', () => {
+      // 真正开始出声才算成功，重置连续失败计数
+      resetFailureGuard();
+      state.isPlaying = true;
+      updatePlayButtonUI();
+      setPlayerStatus('playerStatusPlaying');
+      if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+    });
+
     dom.audio.addEventListener('pause', () => {
+      clearLoadWatchdog();
       state.isPlaying = false;
       updatePlayButtonUI();
-      setPlayerStatus('playerStatusPaused');
+      if (!suppressPauseStatus) setPlayerStatus('playerStatusPaused');
       audioLevel = 0;
       if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
     });
 
     dom.audio.addEventListener('ended', () => {
+      clearLoadWatchdog();
       audioLevel = 0;
       playNext('next');
     });
 
     dom.audio.addEventListener('error', () => {
       if (!dom.audio.src) return;
-      console.warn('audio error', dom.audio.error);
-      if (Date.now() - lastPlayErrorAt < 4000) return;
-      lastPlayErrorAt = Date.now();
-      state.isPlaying = false;
-      updatePlayButtonUI();
-      setPlayerStatus('playerStatusIdle');
-      showToast(t('toastPlayError'));
+      const err = dom.audio.error;
+      if (err && err.code === 1) return; // 主动中断，不算播放失败
+      console.warn('audio error', err);
+      handlePlaybackFailure(state.currentTrack, playToken);
     });
 
     setupProgressDrag();
