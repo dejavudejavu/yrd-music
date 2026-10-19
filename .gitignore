@@ -1,0 +1,18 @@
+# dependencies (本项目无运行时依赖，保留以备用)
+node_modules/
+
+# 系统 / 编辑器
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+
+# 日志与环境变量
+*.log
+.env
+.env.*
+
+# 测试产物
+_shots/
+_tools/

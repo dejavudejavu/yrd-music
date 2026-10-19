@@ -1,0 +1,2136 @@
+/* ==========================================================================
+   皮卡丘的音乐站 · Pikachu Music
+   样式基于原站（charlespikachu/musicsquare）重构，保留原有视觉语言，
+   并补全手机 / 平板 / 横屏 / 安全区等响应式细节。
+   ========================================================================== */
+
+/* 自托管字体：Baloo 2 / Nunito（SIL Open Font License 1.1，许可证见 assets/fonts） */
+@font-face {
+  font-family: "Baloo 2";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("../fonts/baloo2-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("../fonts/nunito-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  color-scheme: dark;
+  --bg-dark: #02030a;
+  --panel-glass: rgba(8, 10, 26, 0.26);
+  --panel-glass-soft: rgba(10, 14, 35, 0.26);
+  --accent: #f5c84c;
+  --accent-strong: #ffdd55;
+  --accent-pink: #ff7bb0;
+  --accent-blue: #4ac8ff;
+  --accent-green: #65f7c4;
+  --accent-red: #ff5c7a;
+  --text-main: #f5f6ff;
+  --text-sub: #a1a6d0;
+  --border-subtle: rgba(255, 255, 255, 0.12);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg-dark);
+  color: var(--text-main);
+  overflow: hidden; /* 桌面端整页不滚动，内部面板各自滚动 */
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+body {
+  min-height: 100%;
+}
+
+button,
+input,
+select {
+  font-family: inherit;
+}
+
+button {
+  touch-action: manipulation;
+}
+
+/* 背景粒子画布 */
+#bg-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 10% 0, #1b2340 0, transparent 55%),
+    radial-gradient(circle at 90% 100%, #211a38 0, transparent 60%),
+    #02030a;
+}
+
+/* 主容器：四周留白 */
+.app {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 104px);
+  height: calc(100dvh - 104px);
+  margin: 44px 80px;
+  padding: 10px 12px;
+  gap: 10px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: radial-gradient(circle at 0 0, rgba(255, 255, 255, 0.06), transparent 60%),
+              radial-gradient(circle at 100% 100%, rgba(136, 196, 255, 0.10), transparent 60%),
+              rgba(0, 0, 0, 0.45);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 0 40px rgba(0, 0, 0, 0.9),
+    0 0 120px rgba(136, 196, 255, 0.35);
+}
+
+.ripple-target,
+.btn,
+.track-item,
+.search-mini-item {
+  position: relative;
+  overflow: hidden;
+}
+
+/* ============================== 顶栏 ============================== */
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-radius: 18px;
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.06), rgba(7, 10, 30, 0.90));
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.8);
+  min-height: 64px;
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.pikachu-box {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  padding: 4px;
+  background:
+    radial-gradient(circle at 30% 0, rgba(255, 255, 255, 0.65), rgba(255, 230, 140, 1)),
+    radial-gradient(circle at 70% 100%, rgba(255, 150, 200, 0.9), rgba(255, 220, 130, 0.9));
+  box-shadow:
+    0 0 18px rgba(255, 215, 130, 1),
+    0 14px 28px rgba(0, 0, 0, 0.95);
+  border: 2px solid rgba(255, 238, 190, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pika-float 2.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.pikachu-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+@keyframes pika-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+
+.title-text {
+  min-width: 0;
+}
+
+.title-text h1 {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: 1px;
+  text-shadow:
+    0 0 12px rgba(255, 212, 95, 0.9),
+    0 0 26px rgba(255, 176, 117, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.title-text p {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--text-sub);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 11px;
+  color: var(--text-sub);
+  flex-shrink: 0;
+}
+
+.lang-toggle {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.lang-btn {
+  border: none;
+  background: transparent;
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: var(--text-sub);
+  font-size: 11px;
+  cursor: pointer;
+  min-width: 32px;
+  min-height: 22px;
+}
+
+.lang-btn.active {
+  background: radial-gradient(circle at 30% 0, rgba(255, 255, 255, 0.28), var(--accent));
+  color: #231b08;
+  font-weight: 600;
+  box-shadow: 0 0 8px rgba(245, 200, 76, 0.8);
+}
+
+.shortcut-hint {
+  max-width: 260px;
+  text-align: right;
+}
+
+.shortcut-toggle-btn {
+  border: none;
+  border-radius: 999px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--text-sub);
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.9);
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+/* ============================== 主布局 ============================== */
+
+.layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns:
+    minmax(260px, 0.8fr)
+    minmax(360px, 1.58fr)
+    minmax(260px, 0.82fr);
+  gap: 10px;
+  min-height: 0;
+}
+
+.panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  padding: 10px;
+  border-radius: 18px;
+  background: var(--panel-glass-soft);
+  border: 1px solid var(--border-subtle);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.85);
+  z-index: 0;
+}
+
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: -25%;
+  background: radial-gradient(circle at 0 0, rgba(255, 255, 255, 0.08), transparent 60%);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.panel-title .icon {
+  font-size: 16px;
+}
+
+.chip {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text-sub);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ============================== 通用控件 ============================== */
+
+.btn {
+  border: none;
+  border-radius: 999px;
+  padding: 6px 13px;
+  background: radial-gradient(circle at 30% 0, rgba(255, 255, 255, 0.2), var(--accent));
+  color: #231b08;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 7px 16px rgba(245, 200, 76, 0.75);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  flex-shrink: 0;
+}
+
+.btn-secondary {
+  background: radial-gradient(circle at 30% 0, rgba(255, 255, 255, 0.05), rgba(80, 100, 180, 0.95));
+  color: var(--text-main);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.8);
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: var(--text-sub);
+  box-shadow: none;
+}
+
+.btn:active {
+  transform: translateY(1px) scale(0.97);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.85);
+}
+
+.btn-icon {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 13px;
+  border-radius: 999px;
+}
+
+.btn:focus-visible,
+.lang-btn:focus-visible,
+.playlist-tab:focus-visible,
+.playmode-btn:focus-visible,
+.source-chip:focus-within,
+.input:focus-visible,
+select:focus-visible,
+.progress-bar-wrapper:focus-visible,
+.shortcut-toggle-btn:focus-visible,
+.modal-close-btn:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(5, 7, 20, 0.8);
+  color: var(--text-main);
+  font-size: 13px;
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(245, 200, 76, 0.7);
+}
+
+.input::placeholder {
+  color: rgba(161, 166, 208, 0.7);
+}
+
+/* ============================== 左侧搜索 ============================== */
+
+.search-panel-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+}
+
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 2px 2px 2px 10px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 0 0, rgba(255, 255, 255, 0.18), transparent 60%),
+    radial-gradient(circle at 100% 100%, rgba(104, 174, 255, 0.25), transparent 60%),
+    rgba(4, 6, 20, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.9);
+}
+
+.search-prefix {
+  font-size: 14px;
+  margin-right: 6px;
+  color: var(--accent-strong);
+  text-shadow: 0 0 8px rgba(245, 200, 76, 0.9);
+}
+
+.search-row .input {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding-left: 0;
+}
+
+.search-row .btn {
+  margin-left: 4px;
+  border-radius: 999px;
+}
+
+.source-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.source-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(4, 6, 20, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  cursor: pointer;
+  user-select: none;
+}
+
+.source-chip input {
+  margin: 0;
+  width: 12px;
+  height: 12px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.source-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 6px currentColor;
+  flex-shrink: 0;
+}
+
+.source-dot.netease { background: #ff6b6b; color: #ff6b6b; }
+.source-dot.qq     { background: #4dd0e1; color: #4dd0e1; }
+.source-dot.kuwo   { background: #ba68c8; color: #ba68c8; }
+.source-dot.joox   { background: #65f7c4; color: #65f7c4; }
+
+.limit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-sub);
+  flex-wrap: wrap;
+}
+
+.limit-row select {
+  background: rgba(5, 7, 24, 0.8);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: var(--text-main);
+  padding: 3px 8px;
+  font-size: 11px;
+  outline: none;
+}
+
+.search-stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-sub);
+}
+
+.search-stats #search-status {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-stats #search-count {
+  flex-shrink: 0;
+}
+
+.search-results-mini {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+  margin-top: 4px;
+}
+
+.search-mini-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  border-radius: 10px;
+  background: rgba(8, 10, 32, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.1s;
+}
+
+.mini-meta-main {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.mini-title {
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mini-artist {
+  font-size: 10px;
+  color: var(--text-sub);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mini-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.mini-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.mini-source {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9px;
+}
+
+/* ============================== 中间播放器 ============================== */
+
+.player-panel {
+  background:
+    radial-gradient(circle at 50% -40%, rgba(255, 218, 120, 0.20), transparent 60%),
+    var(--panel-glass);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.player-top {
+  display: flex;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+  min-height: 165px;
+  flex-shrink: 0;
+}
+
+.cover-wrapper {
+  width: 130px;
+  height: 130px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: radial-gradient(circle at 30% 0, #34344b, #151628);
+  box-shadow:
+    0 14px 30px rgba(0, 0, 0, 0.9),
+    0 0 18px rgba(245, 200, 76, 0.75);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.cover-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+}
+
+.cover-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--text-sub);
+  font-size: 12px;
+  text-align: center;
+  padding: 6px;
+}
+
+.cover-disc {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 10px solid rgba(0, 0, 0, 0.7);
+  background: radial-gradient(circle, #16141f 0, #000 45%, #222 70%, #000 100%);
+  position: relative;
+  animation: disc-spin 12s linear infinite;
+  flex-shrink: 0;
+}
+
+.cover-disc::before {
+  content: "";
+  position: absolute;
+  inset: 24%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 0, var(--accent-pink), #b546b8, #5a2a7c);
+}
+
+.cover-disc::after {
+  content: "";
+  position: absolute;
+  inset: 42%;
+  border-radius: 50%;
+  background: #05050a;
+}
+
+@keyframes disc-spin {
+  to { transform: rotate(360deg); }
+}
+
+.player-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.track-title-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+}
+
+.track-text {
+  max-width: 68%;
+  min-width: 0;
+}
+
+.track-title {
+  font-size: 18px;
+  font-weight: 600;
+  max-height: 48px;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.track-artist {
+  font-size: 12px;
+  color: var(--text-sub);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 10px;
+}
+
+.source-pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.source-pill.source-netease { color: #ff7b7b; background: rgba(255, 107, 107, 0.12); }
+.source-pill.source-qq      { color: #7ee5f0; background: rgba(77, 208, 225, 0.12); }
+.source-pill.source-kuwo    { color: #e2baff; background: rgba(186, 104, 200, 0.12); }
+.source-pill.source-joox    { color: #9dffd9; background: rgba(101, 247, 196, 0.12); }
+
+.lossless-pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(164, 255, 224, 0.6);
+  color: var(--accent-green);
+  background: rgba(13, 82, 60, 0.8);
+}
+
+.player-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.player-btn-row {
+  display: flex;
+  gap: 5px;
+}
+
+.status-pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text-sub);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.player-controls {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.progress-time {
+  width: 42px;
+  text-align: center;
+  color: var(--text-sub);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.progress-bar-wrapper {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(5, 7, 22, 0.9);
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.progress-bar {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  transform: scaleX(0);
+  background: linear-gradient(90deg, var(--accent-pink), var(--accent-strong), var(--accent-blue));
+}
+
+.progress-handle {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fffbe3;
+  border: 2px solid #e6a52b;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+  pointer-events: none;
+}
+
+.control-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  gap: 6px;
+}
+
+.control-main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.control-main .play-btn {
+  width: 40px;
+  height: 40px;
+  font-size: 18px;
+}
+
+.control-secondary {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  min-width: 0;
+}
+
+.volume-slider {
+  width: 90px;
+  accent-color: var(--accent);
+}
+
+/* ============================== 歌词 ============================== */
+
+.lyrics-container {
+  flex: 1;
+  min-height: 0;
+  margin-top: 6px;
+  padding: 10px 18px 8px;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 50% 0, rgba(255, 220, 150, 0.26), transparent 60%),
+    radial-gradient(circle at 10% 100%, rgba(107, 150, 255, 0.26), transparent 60%),
+    rgba(4, 6, 20, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.9);
+}
+
+.lyrics-container::before,
+.lyrics-container::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.lyrics-container::before {
+  inset: -25%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(255, 214, 102, 0.08),
+    rgba(255, 214, 102, 0.38),
+    rgba(104, 184, 255, 0.38),
+    rgba(186, 132, 255, 0.40),
+    rgba(255, 214, 102, 0.08)
+  );
+  opacity: 0.46;
+  filter: blur(14px);
+  animation: lyricsGlow 16s linear infinite;
+}
+
+@keyframes lyricsGlow {
+  to { transform: rotate(360deg); }
+}
+
+.lyrics-container::after {
+  top: -40%;
+  left: -20%;
+  width: 70%;
+  height: 150%;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 248, 170, 0.0),
+    rgba(255, 248, 170, 0.36),
+    rgba(161, 233, 255, 0.0)
+  );
+  transform: translateX(-130%);
+  animation: lyricsSweep 7s linear infinite;
+  opacity: 0.95;
+}
+
+@keyframes lyricsSweep {
+  0%   { transform: translateX(-130%); }
+  50%  { transform: translateX(40%); }
+  100% { transform: translateX(130%); }
+}
+
+.lyrics-container.alt-style::before {
+  background: conic-gradient(
+    from 0deg,
+    rgba(104, 184, 255, 0.14),
+    rgba(186, 132, 255, 0.40),
+    rgba(255, 214, 102, 0.32),
+    rgba(104, 184, 255, 0.46),
+    rgba(186, 132, 255, 0.40)
+  );
+}
+
+.lyrics-inner {
+  position: relative;
+  z-index: 1;
+  padding: 2px 4px 10px;
+  text-align: center;
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+.lyrics-title-line {
+  font-family: "Baloo 2", "Nunito", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 14px;
+  color: var(--text-sub);
+  margin-bottom: 8px;
+  letter-spacing: 0.05em;
+}
+
+.lyrics-line {
+  font-family: "Baloo 2", "Nunito", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 17px;
+  color: rgba(196, 199, 235, 0.78);
+  margin: 4px 0;
+  opacity: 0.52;
+  transition: transform 0.25s ease, color 0.25s ease, text-shadow 0.25s ease, opacity 0.25s ease;
+  white-space: normal;
+  letter-spacing: 0.04em;
+}
+
+.lyrics-line.active {
+  opacity: 1;
+  transform: scale(1.14);
+  background: linear-gradient(120deg, #ffe6a7, #ff9bd4, #8fd5ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow:
+    0 0 10px rgba(255, 255, 255, 0.7),
+    0 0 22px rgba(245, 200, 76, 0.9),
+    0 0 30px rgba(106, 207, 255, 1);
+}
+
+.lyrics-empty {
+  font-family: "Baloo 2", "Nunito", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 15px;
+  color: var(--text-sub);
+  margin-top: 18px;
+  letter-spacing: 0.03em;
+}
+
+/* ============================== 右侧播放列表 ============================== */
+
+.playlist-panel {
+  background:
+    radial-gradient(circle at 100% -40%, rgba(120, 195, 255, 0.22), transparent 60%),
+    var(--panel-glass);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  z-index: 1;
+}
+
+.playlist-tabs {
+  display: inline-flex;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 2px;
+  background: rgba(0, 0, 0, 0.35);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.playlist-tab {
+  padding: 3px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  color: var(--text-sub);
+  border: none;
+  background: transparent;
+  font-size: 11px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.playlist-tab.active {
+  background: radial-gradient(circle at 30% 0, rgba(255, 255, 255, 0.15), rgba(104, 174, 255, 0.9));
+  color: #02040a;
+  font-weight: 600;
+  box-shadow: 0 0 8px rgba(104, 174, 255, 0.7);
+}
+
+.playlist-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+}
+
+.playlist-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  font-size: 11px;
+  color: var(--text-sub);
+  gap: 5px;
+  flex-shrink: 0;
+  padding-bottom: 5px;
+  margin-bottom: 4px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: linear-gradient(180deg, rgba(7, 10, 30, 0.98), rgba(7, 10, 30, 0.85));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.playlist-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.playlist-info {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.playlist-select-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+}
+
+.playlist-select-tools,
+.playlist-file-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.playlist-select-tools select {
+  flex: 1;
+  min-width: 0;
+  background: rgba(5, 7, 24, 0.8);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--text-main);
+  padding: 3px 8px;
+  font-size: 11px;
+  outline: none;
+}
+
+.playlist-file-actions .btn {
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+.playmode-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.playmode-btn {
+  border: none;
+  border-radius: 999px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text-sub);
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
+}
+
+.playmode-btn.active {
+  background: radial-gradient(circle at 30% 0, rgba(255, 255, 255, 0.18), rgba(110, 190, 255, 0.95));
+  color: #02030a;
+  box-shadow: 0 0 10px rgba(110, 190, 255, 0.95);
+}
+
+.playlist-list {
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.track-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  border-radius: 10px;
+  background: rgba(7, 11, 34, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.1s;
+}
+
+.track-item.playing {
+  border-color: var(--accent);
+  box-shadow: 0 0 14px rgba(245, 200, 76, 0.9);
+}
+
+.track-index {
+  width: 22px;
+  text-align: right;
+  color: var(--text-sub);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.track-meta-title {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track-meta-sub {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-sub);
+  margin-top: 2px;
+  min-width: 0;
+}
+
+.track-meta-sub > span:first-child {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track-meta-sub > span:last-child {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.track-actions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.track-actions .btn-icon {
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
+}
+
+.btn-fav-active {
+  background: radial-gradient(circle at 30% 0, rgba(255, 255, 255, 0.2), var(--accent-red));
+  color: #fff5f7;
+  box-shadow: 0 0 12px rgba(255, 92, 122, 0.95);
+}
+
+footer {
+  font-size: 10px;
+  color: var(--text-sub);
+  text-align: right;
+  padding: 0 4px 2px;
+  flex-shrink: 0;
+}
+
+/* ============================== Toast / 水波纹 ============================== */
+
+#toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(18px + var(--safe-bottom));
+  transform: translateX(-50%);
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(8, 10, 26, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 11px;
+  color: var(--text-main);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.9);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 1500;
+  max-width: min(92vw, 460px);
+  text-align: center;
+}
+
+#toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+.ripple-circle,
+.ripple-circle-inner {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0.9;
+  z-index: 20;
+}
+
+.ripple-circle {
+  border: 2px solid rgba(255, 223, 140, 0.85);
+  box-shadow: 0 0 14px rgba(255, 223, 140, 0.9);
+  background: radial-gradient(circle, rgba(255, 250, 220, 0.45), rgba(255, 223, 140, 0.0));
+  animation: rippleOuter 0.75s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+.ripple-circle-inner {
+  border: 1px solid rgba(130, 196, 255, 0.9);
+  box-shadow: 0 0 16px rgba(130, 196, 255, 0.9);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.35), rgba(102, 196, 255, 0.0));
+  animation: rippleInner 0.75s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  z-index: 19;
+}
+
+@keyframes rippleOuter {
+  to {
+    transform: translate(-50%, -50%) scale(2.4);
+    opacity: 0;
+  }
+}
+
+@keyframes rippleInner {
+  to {
+    transform: translate(-50%, -50%) scale(1.7);
+    opacity: 0;
+  }
+}
+
+/* ============================== 滚动条 ============================== */
+
+.search-results-mini::-webkit-scrollbar,
+.playlist-main::-webkit-scrollbar,
+.lyrics-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.search-results-mini::-webkit-scrollbar-track,
+.playlist-main::-webkit-scrollbar-track,
+.lyrics-container::-webkit-scrollbar-track {
+  background: rgba(4, 6, 22, 0.65);
+  border-radius: 999px;
+}
+
+.search-results-mini::-webkit-scrollbar-thumb,
+.playlist-main::-webkit-scrollbar-thumb,
+.lyrics-container::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(122, 182, 255, 0.9), rgba(255, 196, 120, 0.9));
+  box-shadow: 0 0 8px rgba(130, 190, 255, 0.9);
+}
+
+.search-results-mini,
+.playlist-main,
+.lyrics-container {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(130, 190, 255, 0.9) rgba(4, 6, 22, 0.65);
+}
+
+/* ============================== 弹窗 ============================== */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 7, 20, 0.86);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 16px;
+}
+
+.modal-backdrop.show {
+  display: flex;
+}
+
+.modal {
+  background: radial-gradient(circle at 0 0, rgba(255, 255, 255, 0.08), transparent 60%), rgba(10, 14, 40, 0.98);
+  border-radius: 18px;
+  padding: 16px 20px 14px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9);
+  max-width: 380px;
+  width: 92%;
+  max-height: 90vh;
+  max-height: 90dvh;
+  overflow-y: auto;
+  color: #f5f6ff;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.modal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.modal-title-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  background: radial-gradient(circle at 30% 0, rgba(255, 255, 255, 0.32), rgba(255, 217, 140, 0.9));
+  box-shadow: 0 0 10px rgba(255, 217, 140, 0.8);
+  flex-shrink: 0;
+}
+
+.modal-close-btn {
+  border: none;
+  background: transparent;
+  color: #aaa;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 8px;
+}
+
+.modal-desc {
+  margin: 2px 0 8px;
+  font-size: 11px;
+  color: var(--text-sub);
+}
+
+.modal input {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(4, 6, 20, 0.96);
+  color: var(--text-main);
+  font-size: 13px;
+  outline: none;
+  margin-bottom: 10px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* 快捷键说明 */
+.shortcut-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.shortcut-card {
+  border-radius: 12px;
+  padding: 6px 8px;
+  background: rgba(15, 18, 52, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.shortcut-label {
+  font-size: 11px;
+  color: var(--text-sub);
+}
+
+.shortcut-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.shortcut-key kbd {
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* ============================== 响应式：桌面 / 平板 ============================== */
+
+@media (max-width: 1280px) {
+  .app {
+    margin: 32px 40px;
+    height: calc(100vh - 70px);
+    height: calc(100dvh - 70px);
+  }
+}
+
+@media (max-width: 1120px) {
+  .shortcut-hint {
+    max-width: 180px;
+  }
+}
+
+@media (max-width: 1080px) {
+  .layout {
+    grid-template-columns: 1.1fr 1.2fr;
+    grid-template-rows: minmax(260px, 0.9fr) minmax(260px, 1.1fr);
+    grid-template-areas:
+      "player player"
+      "search playlist";
+  }
+
+  .search-panel  { grid-area: search; }
+  .player-panel  { grid-area: player; }
+  .playlist-panel { grid-area: playlist; }
+}
+
+@media (max-width: 1080px) {
+  .shortcut-hint {
+    display: none;
+  }
+}
+
+/* 平板（双栏）：固定高度会把歌词压得过矮，这里改用自然高度 + 页面滚动 */
+@media (min-width: 861px) and (max-width: 1080px) {
+  html, body {
+    height: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .app {
+    height: auto;
+    min-height: calc(100dvh - 24px);
+    margin: 12px;
+  }
+
+  .layout {
+    grid-template-rows: auto auto;
+  }
+
+  .player-top {
+    min-height: 0;
+  }
+
+  .cover-wrapper {
+    width: 120px;
+    height: 120px;
+  }
+
+  .lyrics-container {
+    flex: none;
+    height: 240px;
+  }
+
+  .search-results-mini {
+    flex: none;
+    min-height: 180px;
+    max-height: 360px;
+  }
+
+  .search-results-mini:empty {
+    min-height: 0;
+  }
+
+  .playlist-main {
+    flex: none;
+    min-height: 220px;
+    max-height: 420px;
+  }
+
+  footer {
+    margin-top: auto;
+  }
+}
+
+/* ============================== 响应式：手机 ============================== */
+
+@media (max-width: 860px) {
+  html, body {
+    height: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
+
+  body {
+    min-height: 100dvh;
+  }
+
+  .app {
+    height: auto;
+    min-height: calc(100dvh - 20px);
+    margin: 10px;
+    padding: 8px;
+    gap: 8px;
+    border-radius: 20px;
+  }
+
+  header {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 12px;
+    min-height: 0;
+  }
+
+  .pikachu-box {
+    width: 56px;
+    height: 56px;
+    padding: 3px;
+  }
+
+  .pikachu-img {
+    width: 100%;
+    height: 100%;
+  }
+
+  .title-text h1 {
+    font-size: 16px;
+  }
+
+  .title-text p {
+    font-size: 10px;
+  }
+
+  .header-controls {
+    margin-left: auto;
+    gap: 8px;
+  }
+
+  .shortcut-hint {
+    display: none;
+  }
+
+  .shortcut-toggle-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
+  }
+
+  .lang-btn {
+    min-height: 30px;
+    min-width: 34px;
+  }
+
+  .layout {
+    flex: none;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas:
+      "player"
+      "search"
+      "playlist";
+    gap: 8px;
+  }
+
+  .panel {
+    padding: 9px;
+    border-radius: 16px;
+  }
+
+  .panel-header {
+    margin-bottom: 5px;
+  }
+
+  .panel-title {
+    font-size: 13px;
+    gap: 5px;
+  }
+
+  .panel-title .icon {
+    font-size: 15px;
+  }
+
+  .chip {
+    font-size: 9px;
+    padding: 2px 6px;
+    max-width: 55%;
+  }
+
+  /* 播放器在手机上保持紧凑但完整 */
+  .player-panel {
+    min-height: 0;
+  }
+
+  .player-top {
+    min-height: 0;
+    gap: 9px;
+  }
+
+  .cover-wrapper {
+    width: 100px;
+    height: 100px;
+    border-radius: 14px;
+  }
+
+  .cover-disc {
+    width: 56px;
+    height: 56px;
+    border-width: 8px;
+  }
+
+  .cover-placeholder {
+    font-size: 10px;
+    gap: 4px;
+  }
+
+  /* 小屏封面上放不下提示文案，只保留旋转唱片，避免文字被裁切 */
+  .cover-placeholder [data-i18n="coverHint"] {
+    display: none;
+  }
+
+  .track-text {
+    max-width: none;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .track-title {
+    font-size: 16px;
+    max-height: 42px;
+  }
+
+  .track-artist {
+    font-size: 11px;
+  }
+
+  .player-actions {
+    gap: 4px;
+  }
+
+  .player-btn-row .btn-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .status-pill {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+
+  .progress-row {
+    gap: 5px;
+  }
+
+  .progress-bar-wrapper {
+    height: 10px;
+    border-radius: 999px;
+    overflow: visible;
+  }
+
+  .progress-bar {
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .progress-handle {
+    width: 14px;
+    height: 14px;
+  }
+
+  .progress-time {
+    width: 40px;
+    font-size: 10px;
+  }
+
+  .control-main {
+    gap: 8px;
+  }
+
+  .control-main .btn-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 15px;
+  }
+
+  .control-main .play-btn {
+    width: 46px;
+    height: 46px;
+    font-size: 20px;
+  }
+
+  .volume-slider {
+    width: 82px;
+  }
+
+  .lyrics-container {
+    flex: none;
+    height: clamp(180px, 31vh, 260px);
+    min-height: 0;
+    margin-top: 8px;
+    padding: 10px 14px 8px;
+  }
+
+  .lyrics-line {
+    font-size: 16px;
+  }
+
+  /* 搜索面板：结果列表独立滚动，高度自适应 */
+  .search-results-mini {
+    flex: none;
+    min-height: 132px;
+    max-height: 42vh;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .search-results-mini:empty {
+    min-height: 0;
+    margin-top: 0;
+  }
+
+  .search-mini-item {
+    padding: 9px 10px;
+    font-size: 12px;
+  }
+
+  .mini-title {
+    font-size: 12px;
+  }
+
+  .mini-artist {
+    font-size: 10px;
+  }
+
+  .search-row {
+    padding-left: 8px;
+  }
+
+  .search-row .btn {
+    padding: 7px 13px;
+  }
+
+  .source-chip {
+    padding: 6px 10px;
+    gap: 5px;
+  }
+
+  .source-chip input {
+    width: 14px;
+    height: 14px;
+  }
+
+  .limit-row {
+    font-size: 10px;
+  }
+
+  .limit-row select {
+    min-height: 28px;
+  }
+
+  .search-stats {
+    font-size: 10px;
+  }
+
+  /* 播放列表：头部吸顶，列表独立滚动 */
+  .playlist-main {
+    flex: none;
+    max-height: 58vh;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .playlist-tab {
+    padding: 5px 9px;
+    font-size: 10px;
+  }
+
+  .playlist-select-tools select {
+    min-height: 30px;
+  }
+
+  .playlist-file-actions .btn,
+  .playlist-select-tools .btn {
+    min-height: 30px;
+  }
+
+  .track-item {
+    padding: 8px;
+    gap: 7px;
+  }
+
+  .track-actions .btn-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
+  }
+
+  .track-meta-title {
+    font-size: 12px;
+  }
+
+  .playmode-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  footer {
+    font-size: 9px;
+    text-align: center;
+    margin-top: auto;
+    padding: 2px 4px calc(2px + var(--safe-bottom));
+  }
+}
+
+/* ============================== 响应式：小屏手机 ============================== */
+
+@media (max-width: 560px) {
+  .app {
+    margin: 0;
+    min-height: 100dvh;
+    padding: 6px 8px calc(10px + var(--safe-bottom));
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  header {
+    border-radius: 14px;
+    padding: 7px 9px;
+  }
+
+  .pikachu-box {
+    width: 48px;
+    height: 48px;
+  }
+
+  .logo-area {
+    gap: 8px;
+  }
+
+  .title-text h1 {
+    font-size: 15px;
+    letter-spacing: 0.5px;
+  }
+
+  .title-text p {
+    font-size: 9px;
+  }
+
+  .lang-toggle {
+    padding: 1px;
+  }
+
+  .lang-btn {
+    padding: 3px 8px;
+    min-width: 30px;
+    font-size: 10px;
+  }
+
+  .panel {
+    padding: 8px;
+    border-radius: 14px;
+  }
+
+  .panel-header .chip {
+    display: none; /* 小屏优先保留控件空间，副标题信息不关键 */
+  }
+
+  .cover-wrapper {
+    width: 92px;
+    height: 92px;
+  }
+
+  .cover-disc {
+    width: 50px;
+    height: 50px;
+  }
+
+  .track-title {
+    font-size: 15px;
+  }
+
+  .track-title-row {
+    gap: 4px;
+  }
+
+  .player-btn-row .btn-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .lyrics-container {
+    height: 200px;
+    padding: 8px 12px;
+  }
+
+  .lyrics-title-line {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+
+  .lyrics-line {
+    font-size: 15px;
+    margin: 3px 0;
+  }
+
+  .lyrics-line.active {
+    transform: scale(1.08);
+  }
+
+  .playlist-main {
+    max-height: 62vh;
+  }
+
+  .playlist-tabs {
+    font-size: 10px;
+  }
+
+  .playlist-tab {
+    padding: 5px 7px;
+  }
+
+  .volume-slider {
+    width: 72px;
+  }
+
+  .shortcut-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .modal {
+    padding: 14px 16px 12px;
+  }
+}
+
+/* 超小屏（iPhone SE / 360 及以下） */
+@media (max-width: 380px) {
+  .title-text p {
+    display: none;
+  }
+
+  .header-controls {
+    gap: 6px;
+  }
+
+  .cover-wrapper {
+    width: 84px;
+    height: 84px;
+  }
+
+  .cover-disc {
+    width: 44px;
+    height: 44px;
+    border-width: 7px;
+  }
+
+  .track-title {
+    font-size: 14px;
+  }
+
+  .player-btn-row .btn-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .control-main {
+    gap: 5px;
+  }
+
+  .control-main .btn-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .control-main .play-btn {
+    width: 42px;
+    height: 42px;
+  }
+
+  .volume-slider {
+    width: 60px;
+  }
+
+  .progress-time {
+    width: 36px;
+  }
+
+  .playlist-tab {
+    padding: 5px 6px;
+    font-size: 9.5px;
+  }
+}
+
+/* 横屏手机：内容较高，压缩歌词与封面，保持可滚动 */
+@media (max-width: 950px) and (orientation: landscape) and (max-height: 500px) {
+  .app {
+    min-height: auto;
+  }
+
+  .player-top {
+    align-items: center;
+  }
+
+  .cover-wrapper {
+    width: 84px;
+    height: 84px;
+  }
+
+  .lyrics-container {
+    height: 150px;
+  }
+
+  .search-results-mini {
+    max-height: 48vh;
+  }
+
+  .playlist-main {
+    max-height: 60vh;
+  }
+}
+
+/* 仅在有悬停能力的设备上启用 hover 位移，避免触屏“粘住” */
+@media (hover: hover) and (pointer: fine) {
+  .search-mini-item:hover {
+    background: rgba(26, 32, 80, 0.9);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.85);
+    transform: translateY(-1px);
+  }
+
+  .track-item:hover {
+    background: rgba(26, 32, 80, 0.95);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.9);
+  }
+
+  .btn:hover {
+    transform: translateY(-1px);
+  }
+
+  .source-chip:hover {
+    border-color: rgba(245, 200, 76, 0.55);
+  }
+}
+
+/* 尊重系统的“减少动态效果”设置 */
+@media (prefers-reduced-motion: reduce) {
+  .pikachu-box,
+  .cover-disc,
+  .lyrics-container::before,
+  .lyrics-container::after,
+  .ripple-circle,
+  .ripple-circle-inner {
+    animation: none !important;
+  }
+
+  .btn,
+  .track-item,
+  .search-mini-item,
+  .lyrics-line,
+  #toast {
+    transition: none !important;
+  }
+}

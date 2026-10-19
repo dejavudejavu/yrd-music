@@ -1,0 +1,25 @@
+{
+  "name": "pikachu-music-square",
+  "version": "1.0.0",
+  "private": true,
+  "description": "皮卡丘的音乐站：网易云 / QQ / 酷我 / JOOX 四源音乐搜索、播放与歌词高亮（本地可运行版）",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "start:lan": "node server.js --host 0.0.0.0"
+  },
+  "keywords": [
+    "music",
+    "player",
+    "netease",
+    "qqmusic",
+    "kuwo",
+    "joox",
+    "lyrics"
+  ],
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=18"
+  }
+}
