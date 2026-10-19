@@ -538,19 +538,6 @@ select:focus-visible,
   margin-top: 4px;
 }
 
-/* 手机端搜索结果末尾的自动加载触发器（1px，不占视觉空间） */
-.mobile-load-sentinel {
-  width: 100%;
-  height: 1px;
-  pointer-events: none;
-}
-
-@media (min-width: 861px) {
-  .mobile-load-sentinel {
-    display: none;
-  }
-}
-
 .search-mini-item {
   display: flex;
   justify-content: space-between;
@@ -1580,11 +1567,14 @@ footer {
     height: auto;
     min-height: 100dvh;
     overflow: visible;
+    /* 页面顶部 / 底部留白，避开 iOS 刘海与浏览器底栏 */
+    padding-top: calc(16px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   }
 
   .app {
     height: auto;
-    min-height: calc(100dvh - 20px);
+    min-height: calc(100dvh - 60px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
     margin: 10px;
     padding: 8px;
     gap: 8px;
@@ -1796,12 +1786,14 @@ footer {
     font-size: 16px;
   }
 
-  /* 搜索面板：结果随页面展开，避免列表内滚动“吃掉”手指滑动 */
+  /* 搜索面板：列表最多约 10 首高度，超出后在列表内部滚动 */
   .search-results-mini {
     flex: none;
     min-height: 0;
-    max-height: none;
-    overflow: visible;
+    max-height: min(520px, 62vh);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
   }
 
   .search-results-mini:empty {
@@ -1852,12 +1844,20 @@ footer {
     font-size: 10px;
   }
 
-  /* 播放列表：随页面展开，头部在整页滚动时吸顶 */
+  /* 播放列表：只让歌曲列表滚动，头部信息保持可见 */
   .playlist-main {
     flex: none;
     max-height: none;
     min-height: 0;
     overflow: visible;
+  }
+
+  .playlist-list {
+    max-height: min(520px, 62vh);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 2px;
   }
 
   .playlist-tab {
@@ -1899,7 +1899,7 @@ footer {
     font-size: 9px;
     text-align: center;
     margin-top: auto;
-    padding: 2px 4px calc(2px + var(--safe-bottom));
+    padding: 2px 4px 4px;
   }
 }
 
@@ -1908,8 +1908,8 @@ footer {
 @media (max-width: 560px) {
   .app {
     margin: 0;
-    min-height: 100dvh;
-    padding: 6px 8px calc(10px + var(--safe-bottom));
+    min-height: calc(100dvh - 40px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    padding: 6px 8px 10px;
     border-radius: 0;
     border-left: none;
     border-right: none;

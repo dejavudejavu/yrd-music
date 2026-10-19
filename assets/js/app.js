@@ -1275,10 +1275,6 @@
     dom.searchStatus = $('search-status');
     dom.searchCount = $('search-count');
     dom.searchMiniList = $('search-mini-list');
-    dom.mobileLoadSentinel = document.createElement('div');
-    dom.mobileLoadSentinel.className = 'mobile-load-sentinel';
-    dom.mobileLoadSentinel.setAttribute('aria-hidden', 'true');
-    dom.searchMiniList.insertAdjacentElement('afterend', dom.mobileLoadSentinel);
 
     dom.coverImg = $('cover-img');
     dom.coverPlaceholder = document.querySelector('.cover-placeholder');
@@ -1454,6 +1450,16 @@
       if (activeTab !== 'results') return;
       if (!canAutoLoadMore()) return;
       if (dom.playlistMain.scrollTop + dom.playlistMain.clientHeight >= dom.playlistMain.scrollHeight - 10) {
+        requestMoreResults();
+      }
+    }, { passive: true });
+
+    // 手机端播放列表在自身容器内滚动，滚到底部时自动加载更多结果
+    dom.playlistList.addEventListener('scroll', () => {
+      const activeTab = document.querySelector('.playlist-tab.active')?.dataset.tab || 'results';
+      if (activeTab !== 'results') return;
+      if (!canAutoLoadMore()) return;
+      if (dom.playlistList.scrollTop + dom.playlistList.clientHeight >= dom.playlistList.scrollHeight - 10) {
         requestMoreResults();
       }
     }, { passive: true });
@@ -1642,20 +1648,6 @@
     });
   }
 
-  function setupMobileInfiniteScroll() {
-    if (!('IntersectionObserver' in window) || !dom.mobileLoadSentinel) return;
-    const io = new IntersectionObserver(entries => {
-      if (!entries.some(e => e.isIntersecting)) return;
-      if (!window.matchMedia('(max-width: 860px)').matches) return;
-      if (!state.searchResults.length) return;
-      const activeTab = document.querySelector('.playlist-tab.active')?.dataset.tab || 'results';
-      if (activeTab !== 'results') return;
-      if (!canAutoLoadMore()) return;
-      requestMoreResults();
-    }, { rootMargin: '300px 0px' });
-    io.observe(dom.mobileLoadSentinel);
-  }
-
   /* ============================ 初始化 ============================ */
 
   function init() {
@@ -1668,7 +1660,6 @@
     setupParticles();
     setupRipple();
     setupEvents();
-    setupMobileInfiniteScroll();
     setLanguage(state.language);
     renderPlaylistOptions();
     renderPlaylistList();
