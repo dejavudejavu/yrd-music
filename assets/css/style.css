@@ -193,6 +193,10 @@ header {
   text-overflow: ellipsis;
 }
 
+.title-text p:empty {
+  display: none;
+}
+
 .header-controls {
   display: flex;
   align-items: center;

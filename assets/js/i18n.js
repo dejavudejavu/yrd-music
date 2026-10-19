@@ -209,7 +209,10 @@
     languages: ['zh', 'en'],
     get: function (lang, key) {
       const pack = translations[lang] || translations.zh;
-      return (pack && pack[key]) || translations.zh[key] || key;
+      // 允许显式空字符串（例如作者行留空），不要回退成键名
+      if (pack && Object.prototype.hasOwnProperty.call(pack, key)) return pack[key];
+      if (Object.prototype.hasOwnProperty.call(translations.zh, key)) return translations.zh[key];
+      return key;
     }
   };
 })();
